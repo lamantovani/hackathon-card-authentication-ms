@@ -6,9 +6,11 @@ import com.fiap.hackathon.card_authentication_ms.model.AuthenticationRequestDto;
 import com.fiap.hackathon.card_authentication_ms.model.Role;
 import com.fiap.hackathon.card_authentication_ms.model.User;
 import com.fiap.hackathon.card_authentication_ms.model.UserRequestDto;
-import com.fiap.hackathon.card_authentication_ms.repository.UserRepository;
+import com.fiap.hackathon.card_authentication_ms.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,8 +27,10 @@ import java.util.Collections;
 @RequestMapping("/api/auth")
 public class AuthenticationController {
 
+    private static final Log logger = LogFactory.getLog(AuthenticationController.class);
+
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @Autowired
     private AuthenticationManager manager;
@@ -36,23 +40,22 @@ public class AuthenticationController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid AuthenticationRequestDto request) {
-        System.out.println("senhas ==> " + request.password());
         var authenticationToken = new UsernamePasswordAuthenticationToken(request.username(), request.password());
         var authentication = manager.authenticate(authenticationToken);
-        var tokenJWT = tokenService.gerarToken((User) authentication.getPrincipal());
+        var tokenJWT = tokenService.generateToken((User) authentication.getPrincipal());
 
         return ResponseEntity.ok(new DataTokenJWT(tokenJWT));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody UserRequestDto request) {
-        if (userRepository.existsByUsername(request.username())) {
+        if (userService.existsByUsername(request.username())) {
             return ResponseEntity.badRequest().body("Username is already taken!");
         }
         User user = convertUserRequestDtoToUserEntity(request);
         user.setPassword(new BCryptPasswordEncoder().encode(request.password()));
         user.setRoles(Collections.singleton(new Role(1L, "ROLE_USER")));
-        userRepository.save(user);
+        userService.save(user);
 
         return ResponseEntity.ok("User registered successfully");
     }

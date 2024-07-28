@@ -30,18 +30,13 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        //return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        var list = new ArrayList<SimpleGrantedAuthority>();
+        this.roles.forEach(element -> list.add(new SimpleGrantedAuthority(element.getName())));
+        return list;
     }
-
-//    @Override
-//    public Collection<? extends GrantedAuthority> getAuthorities() {
-//        var list = new ArrayList<SimpleGrantedAuthority>();
-//        this.roles.forEach(element -> list.add(new SimpleGrantedAuthority(element.getName())));
-//        return list;
-//    }
 
     @Override
     public String getPassword() {
@@ -50,7 +45,7 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() {
-        return this.password;
+        return this.username;
     }
 
     @Override
